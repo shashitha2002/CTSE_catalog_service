@@ -2,6 +2,7 @@ import express, {type Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import bookRoutes from './routes/bookRoutes.js';
 //import bookRoutes from './routes/bookRoutes';
 
 const app: Application = express();
@@ -18,6 +19,6 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Routes
-//app.use('/api/books', bookRoutes);
+app.use('/api/books', bookRoutes);
 
 export default app;
