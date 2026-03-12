@@ -4,7 +4,7 @@ import {
   deleteBook,
   getAllBooks,
   getBookById,
-  getBookImage,
+  getBookImage, getBooksByCategory,
   updateBook,
 } from "../controllers/bookController.js";
 import { upload } from "../middleware/upload.js";
@@ -112,6 +112,8 @@ router.get("/:id", authenticate, getBookById);
  *         description: Book image not found
  */
 router.get("/image/:id", authenticate, getBookImage);
+
+router.get("/category/:category", authenticate, getBooksByCategory);
 
 /**
  * @swagger

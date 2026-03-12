@@ -214,3 +214,21 @@ export const deleteBook = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error Deleting book", error: error });
   }
 };
+
+export const getBooksByCategory = async (req: Request, res: Response) => {
+  try{
+    const category = req.params.category;
+
+    const books = await Book.find({category : category})
+
+    if (books.length === 0) {
+      return res.status(404).json({ message: "No books found in this category" });
+    }
+
+    res.status(200).json({message : `books of category ${category}`, data: books});
+
+  }catch(error){
+    console.error(error);
+    res.status(500).json({ message: "Error Receiving books by category", error: error });
+  }
+}
