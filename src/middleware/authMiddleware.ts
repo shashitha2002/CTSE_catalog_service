@@ -1,32 +1,56 @@
-import type {Request, Response, NextFunction} from 'express';
-import axios from 'axios';
+import type {Request, Response, NextFunction} from "express";
+import 'dotenv/config'
+import jwt from "jsonwebtoken";
 
-export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-    if (!authHeader) {
-        return res.status(401).json({ message: 'No token provided' });
-    }
+export interface JwtPayload {
+    id: string;
+    role: string;
+    iat: number;
+    exp: number;
+}
 
-    // --- MOCK MODE (Use this until User Service is ready) ---
-    if (process.env.NODE_ENV === 'development') {
-        console.log("Mock Auth: Bypassing User Service check...");
-        return next();
-    }
-
-    // --- REAL MODE (The Actual Assignment Requirement) ---
-    try {
-        // Calling the API Gateway to reach the User Service
-        const response = await axios.get(`${process.env.GATEWAY_URL}/api/users/verify-admin`, {
-            headers: { Authorization: authHeader }
-        });
-
-        if (response.data.isAdmin) {
-            next();
-        } else {
-            res.status(403).json({ message: 'Requires Admin Role' });
+// Extend Express Request so controllers can access req.user
+declare global {
+    namespace Express {
+        interface Request {
+            user?: JwtPayload;
         }
-    } catch (error) {
-        res.status(500).json({ message: 'User Service unreachable' });
     }
+}
+
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "No token provided" });
+        }
+
+        const token = authHeader.split(" ")[1]; // extract token after "Bearer "
+
+        if (!token) {
+            return res.status(401).json({ message: "No token provided" });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET as string) as unknown as JwtPayload;
+        req.user = decoded;
+
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+};
+
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+    }
+
+    next();
 };
