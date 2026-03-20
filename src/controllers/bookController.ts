@@ -217,15 +217,29 @@ export const deleteBook = async (req: Request, res: Response) => {
 
 export const getBooksByCategory = async (req: Request, res: Response) => {
   try{
-    const category = req.params.category;
+    const category = req.query.category;
+    let filter = {};
 
-    const books = await Book.find({category : category})
+    if (category) {
+      filter = { category };
+    }
+
+    const books = await Book.find(filter);
 
     if (books.length === 0) {
       return res.status(404).json({ message: "No books found in this category" });
     }
-
-    res.status(200).json({message : `books of category ${category}`, data: books});
+    const bookWithLinks = books.map((book) => {
+      return {
+        _id: book._id,
+        title: book.title,
+        author: book.author,
+        price: book.price,
+        category: book.category,
+        imageLink: `${req.protocol}://${req.get("host")}/api/books/image/${book._id}`,
+      };
+    });
+    res.status(200).json({message : `books of category ${category}`, data: bookWithLinks});
 
   }catch(error){
     console.error(error);

@@ -69,6 +69,28 @@ router.get("/", authenticate, getAllBooks);
 
 /**
  * @swagger
+ * /api/books/category:
+ *   get:
+ *     summary: Get all books or filter by category
+ *     tags: [Books]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Filter books by category (e.g., Fantasy, Science)
+ *     responses:
+ *       200:
+ *         description: List of books
+ */
+router.get("/category", authenticate, getBooksByCategory);
+
+
+/**
+ * @swagger
  * /api/books/{id}:
  *   get:
  *     summary: Get a book by ID
@@ -112,9 +134,6 @@ router.get("/:id", authenticate, getBookById);
  *         description: Book image not found
  */
 router.get("/image/:id", authenticate, getBookImage);
-
-router.get("/category/:category", authenticate, getBooksByCategory);
-
 /**
  * @swagger
  * /api/books/update/{id}:
