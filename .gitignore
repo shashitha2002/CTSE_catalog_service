@@ -1,3 +1,6 @@
 node_modules
-.idea
+dist
 .env
+docker-run.bat
+*.log
+.idea
