@@ -1,13 +1,17 @@
 import type { Request, Response } from "express";
-import {Book, type IBook} from "../models/Book.js";
-import {isAdmin} from "../services/userServiceClient.js";
+import { Book, type IBook } from "../models/Book.js";
+import {
+  isAdmin,
+  userRoleCheck,
+  type UserRoleCheckResponse,
+} from "../services/userServiceClient.js";
 
 export const createBook = async (req: Request, res: Response) => {
   try {
     const { title, author, category, price, stockCount, createdBy } = req.body;
     console.log(title, author, category, price, stockCount, createdBy);
-    const adminCheck = await isAdmin(createdBy)
-    console.log("adminCheck", adminCheck)
+    const adminCheck = await isAdmin(createdBy);
+    console.log("adminCheck", adminCheck);
     if (!adminCheck) {
       return res.status(403).json({ message: "Only admins can update books" });
     }
@@ -133,14 +137,14 @@ export const updateBook = async (req: Request, res: Response) => {
   try {
     console.log("updated information", req.body);
 
-    const existingBook : IBook | null = await Book.findById(req.params.id)
+    const existingBook: IBook | null = await Book.findById(req.params.id);
 
-    if(!existingBook) {
+    if (!existingBook) {
       return res.status(404).json({ message: "Book not found" });
     }
 
-    const adminCheck = await isAdmin(existingBook.createdBy)
-    console.log("adminCheck", adminCheck)
+    const adminCheck = await isAdmin(existingBook.createdBy);
+    console.log("adminCheck", adminCheck);
 
     if (!adminCheck) {
       return res.status(403).json({ message: "Only admins can update books" });
@@ -149,11 +153,11 @@ export const updateBook = async (req: Request, res: Response) => {
     const updateData: any = { ...req.body };
 
     //Remove all the empty fields
-    Object.keys(updateData).forEach(key => {
-      if(updateData[key] === '') {
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === "") {
         delete updateData[key];
       }
-    })
+    });
 
     if (req.body.price) {
       updateData.price = Number(req.body.price);
@@ -169,9 +173,9 @@ export const updateBook = async (req: Request, res: Response) => {
     }
 
     const updatedBook = await Book.findByIdAndUpdate(
-        req.params.id,
-        updateData,
-        { returnDocument: 'after' }
+      req.params.id,
+      updateData,
+      { returnDocument: "after" },
     );
 
     if (!updatedBook) {
@@ -182,7 +186,6 @@ export const updateBook = async (req: Request, res: Response) => {
       message: `Book (${req.params.id}) updated successfully`,
       book: updatedBook,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error", error });
@@ -191,17 +194,26 @@ export const updateBook = async (req: Request, res: Response) => {
 
 export const deleteBook = async (req: Request, res: Response) => {
   try {
-    const book : IBook | null = await Book.findById(req.params.id);
+    const book: IBook | null = await Book.findById(req.params.id);
 
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     } else {
-      const adminCheck = await isAdmin(book.createdBy)
-      console.log("adminCheck", adminCheck)
-
-      if (!adminCheck) {
-        return res.status(403).json({ message: "Only admins can update books" });
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ message: "No token provided" });
       }
+
+      const adminResponse = await userRoleCheck(authHeader);
+
+      console.log("User role:", adminResponse.role);
+
+      if (!adminResponse.isAdmin) {
+        return res
+          .status(403)
+          .json({ message: "Only admins can delete books" });
+      }
+
       const DeletedBook = await Book.findByIdAndDelete(req.params.id);
       if (DeletedBook) {
         res
@@ -209,14 +221,17 @@ export const deleteBook = async (req: Request, res: Response) => {
           .json({ message: `Book ${DeletedBook.title} deleted successfully` });
       }
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error Deleting book", error: error });
+  } catch (error: any) {
+    console.error("Delete book error:", error);
+    // Ensure the error message is returned properly
+    res
+      .status(500)
+      .json({ message: "Error deleting book", error: error.message || error });
   }
 };
 
 export const getBooksByCategory = async (req: Request, res: Response) => {
-  try{
+  try {
     const category = req.query.category;
     let filter = {};
 
@@ -227,7 +242,9 @@ export const getBooksByCategory = async (req: Request, res: Response) => {
     const books = await Book.find(filter);
 
     if (books.length === 0) {
-      return res.status(404).json({ message: "No books found in this category" });
+      return res
+        .status(404)
+        .json({ message: "No books found in this category" });
     }
     const bookWithLinks = books.map((book) => {
       return {
@@ -239,10 +256,13 @@ export const getBooksByCategory = async (req: Request, res: Response) => {
         imageLink: `${req.protocol}://${req.get("host")}/api/books/image/${book._id}`,
       };
     });
-    res.status(200).json({message : `books of category ${category}`, data: bookWithLinks});
-
-  }catch(error){
+    res
+      .status(200)
+      .json({ message: `books of category ${category}`, data: bookWithLinks });
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error Receiving books by category", error: error });
+    res
+      .status(500)
+      .json({ message: "Error Receiving books by category", error: error });
   }
-}
+};
