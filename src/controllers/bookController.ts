@@ -1,10 +1,6 @@
 import type { Request, Response } from "express";
 import { Book, type IBook } from "../models/Book.js";
-import {
-  isAdmin,
-  userRoleCheck,
-  type UserRoleCheckResponse,
-} from "../services/userServiceClient.js";
+import { isAdmin, userRoleCheck } from "../services/userServiceClient.js";
 
 export const createBook = async (req: Request, res: Response) => {
   try {
@@ -66,6 +62,7 @@ export const getAllBooks = async (req: Request, res: Response) => {
         title: book.title,
         author: book.author,
         price: book.price,
+        stockCount: book.stockCount,
         category: book.category,
         imageLink: `${req.protocol}://${req.get("host")}/api/books/image/${book._id}`,
       };
@@ -115,6 +112,7 @@ export const getBookById = async (req: Request, res: Response) => {
         title: book.title,
         author: book.author,
         price: book.price,
+        stockCount: book.stockCount,
         category: book.category,
         imageLink: `${req.protocol}://${req.get("host")}/api/books/image/${book._id}`,
       });
@@ -123,6 +121,7 @@ export const getBookById = async (req: Request, res: Response) => {
         title: book.title,
         author: book.author,
         price: book.price,
+        stockCount: book.stockCount,
         category: book.category,
         imageLink: `${req.protocol}://${req.get("host")}/api/books/image/${book._id}`,
       });
@@ -252,6 +251,7 @@ export const getBooksByCategory = async (req: Request, res: Response) => {
         title: book.title,
         author: book.author,
         price: book.price,
+        stockCount: book.stockCount,
         category: book.category,
         imageLink: `${req.protocol}://${req.get("host")}/api/books/image/${book._id}`,
       };

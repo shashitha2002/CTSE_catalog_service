@@ -1,6 +1,5 @@
 import axios from "axios";
 import 'dotenv/config'
-import { token } from "morgan";
 
 const API_GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
